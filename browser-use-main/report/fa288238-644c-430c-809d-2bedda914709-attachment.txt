@@ -1,0 +1,8 @@
+ERROR    browser_use.Agent🅰 e5ca on 🆂 e5ca 🅟 9B58:service.py:857 ❌ Result failed 1/3 times:
+ ('User not found.', 401)
+ERROR    browser_use.Agent🅰 e5ca on 🆂 e5ca 🅟 9B58:service.py:857 ❌ Result failed 2/3 times:
+ ('User not found.', 401)
+ERROR    browser_use.Agent🅰 e5ca on 🆂 e5ca 🅟 9B58:service.py:857 ❌ Result failed 3/3 times:
+ ('User not found.', 401)
+ERROR    browser_use.Agent🅰 e5ca on 🆂 e5ca 🅟 9B58:service.py:1356 ❌ Stopping due to 3 consecutive failures
+WARNING  cdp_use.client:client.py:332 WebSocket connection closed: no close frame received or sent

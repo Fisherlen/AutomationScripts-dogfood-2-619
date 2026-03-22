@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$/../../AI/OpenAIProject/AGI05_RAG/ChatPDF/chatpdf" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../AI/OpenAIProject/AGI11_Transformer" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../AI/OpenAIProject/AGI13_MultiModel/GroundingDINO" vcs="Git" />
+  </component>
+</project>
