@@ -29,90 +29,129 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import time
 
 
-def test_baidu():
+def get_ads_from_page(driver):
     """
-    更精确地测试百度搜索"手机"页面中的广告是否包含"百度"
+    从当前页面获取所有广告信息
     """
-    # 初始化浏览器驱动
+    ads_info = []
+    
+    ad_indicators = driver.find_elements(By.XPATH, "//*[contains(text(), '广告')]")
+    
+    for indicator in ad_indicators:
+        try:
+            ad_container = indicator.find_element(By.XPATH, "./ancestor::*[contains(@class, 'c-container') or contains(@class, 'result') or contains(@class, 'ad')][1]")
+            ad_text = ad_container.text.strip()
+            if ad_text and ad_text not in ads_info:
+                ads_info.append(ad_text)
+        except:
+            ad_text = indicator.text.strip()
+            if ad_text and ad_text not in ads_info:
+                ads_info.append(ad_text)
+    
+    explicit_ads = driver.find_elements(By.CSS_SELECTOR, "[data-tpl='ad'], .c-container[tpl='ad'], .ecom_ad, [data-click*='ad']")
+    for ad in explicit_ads:
+        ad_text = ad.text.strip()
+        if ad_text and ad_text not in ads_info:
+            ads_info.append(ad_text)
+    
+    return ads_info
+
+
+def test_baidu_two_pages():
+    """
+    测试百度搜索"手机"，返回前2页中所有包含广告的信息
+    """
     options = webdriver.ChromeOptions()
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-
-    # 使用以下代码自动管理 ChromeDriver
+    options.add_argument('--disable-blink-features=AutomationControlled')
+    options.add_experimental_option('excludeSwitches', ['enable-automation'])
+    options.add_experimental_option('useAutomationExtension', False)
+    options.add_argument('--start-maximized')
+    
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
-    wait = WebDriverWait(driver, 5)
-
+    wait = WebDriverWait(driver, 15)
+    
+    all_ads = []
+    
     try:
-        # 1. 打开百度网页
         print("打开百度网页...")
         driver.get("https://www.baidu.com/")
-
-        # 2. 在搜索框中输入"手机"
+        
+        time.sleep(3)
+        
+        try:
+            close_btn = driver.find_element(By.CSS_SELECTOR, ".close-btn, .s-close, [class*='close']")
+            close_btn.click()
+            print("关闭弹窗...")
+            time.sleep(1)
+        except:
+            pass
+        
         print("输入搜索关键词'手机'...")
-        search_box = driver.find_element(By.ID, "kw")
-        search_box.clear()
-        search_box.send_keys("手机")
-        search_box.send_keys(Keys.RETURN)
-
-        # 4. 等待广告加载（广告通常加载较慢）
-        print("等待广告加载...")
+        driver.execute_script("document.getElementById('kw').value = '手机';")
+        time.sleep(0.5)
+        
+        driver.execute_script("document.getElementById('su').click();")
+        
+        print("等待搜索结果加载...")
         time.sleep(5)
-
-        # 5. 查找百度广告元素
-        # 百度广告通常有特定的标记
-        ad_contents = []
-
-        # 查找带有广告标记的元素
-        ad_indicators = driver.find_elements(By.XPATH, "//*[contains(text(), '广告') or contains(text(), '广告')]")
-
-        for indicator in ad_indicators:
-            # 获取广告容器
-            try:
-                # 向上查找广告容器
-                ad_container = indicator.find_element(By.XPATH, "./ancestor::*[contains(@class, 'c-container') or contains(@class, 'result') or contains(@class, 'ad')]")
-                ad_contents.append(ad_container.text)
-            except:
-                # 如果找不到容器，就取指示器附近的文本
-                ad_contents.append(indicator.text)
-
-        # 查找明确标记为广告的容器
-        explicit_ads = driver.find_elements(By.CSS_SELECTOR, "[data-tpl='ad'], .c-container[tpl='ad'], .ecom_ad")
-        for ad in explicit_ads:
-            ad_contents.append(ad.text)
-
-        # 合并所有广告内容
-        all_ad_text = " ".join(ad_contents)
-        print(f"收集到的广告内容: {all_ad_text[:300]}...")
-
-        # 6. 检查是否包含"百度"
-        if "百度" in all_ad_text:
-            print("\n--》测试通过：广告中包含':百度'")
-            return True
-        else:
-            print("\n--》测试失败：广告中不包含'百度'")
-            return False
-
-
+        
+        print("\n========== 第1页广告信息 ==========")
+        page1_ads = get_ads_from_page(driver)
+        for i, ad in enumerate(page1_ads, 1):
+            print(f"\n广告 {i}:")
+            print(ad[:200] + "..." if len(ad) > 200 else ad)
+        all_ads.extend(page1_ads)
+        print(f"\n第1页共找到 {len(page1_ads)} 条广告")
+        
+        try:
+            next_page = driver.find_element(By.CSS_SELECTOR, "a.n:last-child")
+            print("\n点击下一页...")
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", next_page)
+            time.sleep(1)
+            driver.execute_script("arguments[0].click();", next_page)
+            
+            time.sleep(5)
+            
+            print("\n========== 第2页广告信息 ==========")
+            page2_ads = get_ads_from_page(driver)
+            for i, ad in enumerate(page2_ads, 1):
+                print(f"\n广告 {i}:")
+                print(ad[:200] + "..." if len(ad) > 200 else ad)
+            all_ads.extend(page2_ads)
+            print(f"\n第2页共找到 {len(page2_ads)} 条广告")
+        except NoSuchElementException:
+            print("\n未找到下一页按钮")
+        except Exception as e:
+            print(f"\n翻页失败: {str(e)}")
+        
+        print("\n" + "="*50)
+        print(f"前2页共收集到 {len(all_ads)} 条广告信息")
+        print("="*50)
+        
+        return all_ads
+        
     except TimeoutException:
         print("测试失败：页面加载超时")
-        return False
+        return all_ads
     except Exception as e:
         print(f"测试执行出错: {str(e)}")
-        return False
+        import traceback
+        traceback.print_exc()
+        return all_ads
     finally:
-        # 等待30秒再关闭浏览器
-        # print("等待30秒...")
-        time.sleep(15)
-
-        # 关闭浏览器
+        print("\n等待10秒后关闭浏览器...")
+        time.sleep(10)
         driver.quit()
-        print("\n\n浏览器已关闭")
+        print("浏览器已关闭")
+
 
 if __name__ == "__main__":
-    # 运行简化版本
-    test_baidu()
+    test_baidu_two_pages()
