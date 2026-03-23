@@ -37,59 +37,44 @@ def test_baidu():
     """
     更精确地测试百度搜索"手机"页面中的广告是否包含"百度"
     """
-    # 初始化浏览器驱动
     options = webdriver.ChromeOptions()
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
 
-    # 使用以下代码自动管理 ChromeDriver
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
     wait = WebDriverWait(driver, 5)
 
     try:
-        # 1. 打开百度网页
         print("打开百度网页...")
         driver.get("https://www.baidu.com/")
 
-        # 2. 在搜索框中输入"手机"
         print("输入搜索关键词'手机'...")
-        search_box = driver.find_element(By.ID, "chat-textarea")
-        search_box.clear()
-        search_box.send_keys("手机")
-        search_box.send_keys(Keys.RETURN)
+        driver.execute_script("document.getElementById('kw').value = '手机';")
+        time.sleep(0.5)
+        driver.execute_script("document.getElementById('su').click();")
 
-        # 4. 等待广告加载（广告通常加载较慢）
         print("等待广告加载...")
         time.sleep(5)
 
-        # 5. 查找百度广告元素
-        # 百度广告通常有特定的标记
         ad_contents = []
 
-        # 查找带有广告标记的元素
-        ad_indicators = driver.find_elements(By.XPATH, "//*[contains(text(), '广告') or contains(text(), '广告')]")
+        ad_indicators = driver.find_elements(By.XPATH, "//*[contains(text(), '广告')]")
 
         for indicator in ad_indicators:
-            # 获取广告容器
             try:
-                # 向上查找广告容器
                 ad_container = indicator.find_element(By.XPATH, "./ancestor::*[contains(@class, 'c-container') or contains(@class, 'result') or contains(@class, 'ad')]")
                 ad_contents.append(ad_container.text)
             except:
-                # 如果找不到容器，就取指示器附近的文本
                 ad_contents.append(indicator.text)
 
-        # 查找明确标记为广告的容器
         explicit_ads = driver.find_elements(By.CSS_SELECTOR, "[data-tpl='ad'], .c-container[tpl='ad'], .ecom_ad")
         for ad in explicit_ads:
             ad_contents.append(ad.text)
 
-        # 合并所有广告内容
         all_ad_text = " ".join(ad_contents)
         print(f"收集到的广告内容: {all_ad_text[:300]}...")
 
-        # 6. 检查是否包含"百度"
         if "百度" in all_ad_text:
             print("\n--》测试通过：广告中包含':百度'")
             return True
@@ -105,14 +90,9 @@ def test_baidu():
         print(f"测试执行出错: {str(e)}")
         return False
     finally:
-        # 等待30秒再关闭浏览器
-        # print("等待30秒...")
         time.sleep(15)
-
-        # 关闭浏览器
         driver.quit()
         print("\n\n浏览器已关闭")
 
 if __name__ == "__main__":
-    # 运行简化版本
     test_baidu()
