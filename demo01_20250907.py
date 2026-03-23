@@ -54,7 +54,7 @@ def test_baidu():
 
         # 2. 在搜索框中输入"手机"
         print("输入搜索关键词'手机'...")
-        search_box = driver.find_element(By.ID, "chat-textarea")
+        search_box = driver.find_element(By.ID, "kw")
         search_box.clear()
         search_box.send_keys("手机")
         search_box.send_keys(Keys.RETURN)
